@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'notify-graphite'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{__FILE__} [-h] -c <carbon> [-p <portnumber>] [-b <basename>] <eventname>"
+
+  opts.on("-c", "--carbon Carbon host", :REQUIRED, "Hostname or address of your carbon host") do |h|
+    options[:hostname] = h
+  end
+
+  opts.on("-p", "--port Carbon Port", :OPTIONAL, "Carbon port. Default: 2003") do |p|
+    options[:port] = p.to_i || 2003
+  end
+
+  opts.on("-b", "--basename Basename for events", :OPTIONAL, "Basename for events Default: com.mycompany") do |p|
+    options[:port] = p.to_i || 2003
+  end
+
+  opts.on("-h", "--help", "Show this help information") do
+    puts opts
+    exit 1
+  end
+end.parse!
+
+unless options[:hostname]
+  ::STDERR.puts("ERROR: please specify a carbon host")
+  abort
+end
+
+notify = Notify::Graphite.new(options[:hostname], options[:port], 'com.mycompany')
+
+if ARGV.length > 0
+  notify.send_event(ARGV.join('.'))
+else
+  ::STDERR.puts("ERROR: no eventname given")
+  abort
+end
